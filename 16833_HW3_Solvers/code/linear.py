@@ -28,7 +28,7 @@ def create_linear_system(odoms, observations, sigma_odom, sigma_observation,
     '''
 
     n_odom = len(odoms)
-    n_obs = len(observations)
+    n_obs = len(observations) 
 
     M = (n_odom + 1) * 2 + n_obs * 2
     N = n_poses * 2 + n_landmarks * 2
@@ -41,10 +41,36 @@ def create_linear_system(odoms, observations, sigma_odom, sigma_observation,
     sqrt_inv_obs = np.linalg.inv(scipy.linalg.sqrtm(sigma_observation))
 
     # TODO: First fill in the prior to anchor the 1st pose at (0, 0)
+    H_p = np.zeros((2, N))
+    H_p[0, 0] = 1
+    H_p[1, 1] = 1
+
+    A[0:2, :] = sqrt_inv_odom @ H_p
+    b[0:2] = np.array([0, 0])
 
     # TODO: Then fill in odometry measurements
+    for i in range(n_odom):
+        H_o = np.zeros((2, N))
+        H_o[0, 2*i] = -1
+        H_o[0, 2*i + 2] = 1
+        H_o[1, 2*i + 1] = -1
+        H_o[1, 2*i + 3] = 1
+
+        A[2*i + 2:2*i + 4, :] = sqrt_inv_odom @ H_o
+        b[2*i + 2:2*i + 4] = sqrt_inv_odom @ odoms[i]
 
     # TODO: Then fill in landmark measurements
+    for k in range(n_obs):
+        i = int(observations[k][0])
+        j = int(observations[k][1])
+        H_l = np.zeros((2, N))
+        H_l[0, 2*i] = -1
+        H_l[0, 2*n_poses + 2*j] = 1
+        H_l[1, 2*i + 1] = -1
+        H_l[1, 2*n_poses + 2*j + 1] = 1
+
+        A[2*(n_odom + 1) + 2*k:2*(n_odom + 1) + 2*k + 2, :] = sqrt_inv_obs @ H_l
+        b[2*(n_odom + 1) + 2*k:2*(n_odom + 1) + 2*k + 2] = sqrt_inv_obs @ observations[k, 2:4]
 
     return csr_matrix(A), b
 
@@ -113,4 +139,4 @@ if __name__ == '__main__':
         traj, landmarks = devectorize_state(x, n_poses)
 
         # Visualize the final result
-        plot_traj_and_landmarks(traj, landmarks, gt_traj, gt_landmarks)
+        plot_traj_and_landmarks(traj, landmarks, gt_traj, gt_landmarks, method, total_time/total_iters)

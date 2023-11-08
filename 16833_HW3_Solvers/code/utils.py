@@ -18,7 +18,7 @@ def devectorize_state(x, n_poses):
     return traj, landmarks
 
 
-def plot_traj_and_landmarks(traj, landmarks, gt_traj, gt_landmarks):
+def plot_traj_and_landmarks(traj, landmarks, gt_traj, gt_landmarks, method=None, time=None):
     plt.plot(gt_traj[:, 0], gt_traj[:, 1], 'b-', label='gt poses')
     plt.scatter(gt_landmarks[:, 0],
                 gt_landmarks[:, 1],
@@ -35,4 +35,13 @@ def plot_traj_and_landmarks(traj, landmarks, gt_traj, gt_landmarks):
                 label='landmarks')
 
     plt.legend()
+
+    if time != None:
+        img_name = f'../data/{method}.png'
+        plt.title(f'Method: {method}, Average time: {time}')
+    else:
+        img_name = f'../data/nonlinear_{method}.png'
+        plt.title(f'Method: {method}')
+    plt.savefig(img_name, bbox_inches='tight', pad_inches=0.1)
+
     plt.show()
